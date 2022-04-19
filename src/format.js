@@ -46,7 +46,7 @@ const format = {
       .setLocale("en")
       .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
 
-    return param ? formatted + ` (${dt.offsetNameShort || "Local"})` : "";
+    return param ? formatted + ` (UTC)` : "";
   },
 
   truncate: (address = "", [h, t]) => {

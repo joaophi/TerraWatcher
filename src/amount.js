@@ -125,7 +125,7 @@ const parseAmounts = (tx, address) => {
     }
 }
 
-const parseAddresses = (tx, address) => {
+export const parseAddresses = (tx, address) => {
     const addresses = new Set()
     tx.tx.value.msg
         .forEach(msg =>
