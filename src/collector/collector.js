@@ -60,10 +60,13 @@ const collectBlock = async (info) => {
 }
 
 const collectTx = async (hash) => {
+    const client = await db.connect()
     try {
         const { addresses, timestamp, json } = await processTx(hash)
 
-        const result = await db.query(`
+        await client.query("BEGIN")
+
+        const result = await client.query(`
             INSERT INTO tx(hash, "timestamp", json)
             VALUES ($1, $2, $3)
             RETURNING id
@@ -71,29 +74,34 @@ const collectTx = async (hash) => {
         const id = result.rows[0].id
 
         for (const address of addresses) {
-            await db.query(`
+            await client.query(`
                 INSERT INTO tx_address(tx_id, address)
                 VALUES ($1, $2)
             `, [id, address.address])
 
             for (const amount of address.amountIn) {
-                await db.query(`
+                await client.query(`
                     INSERT INTO tx_amount(tx_id, address, denom, amount, usd, in_out)
                     VALUES ($1, $2, $3, $4, $5, $6);
                 `, [id, address.address, amount.denom, amount.amount, amount.usd, "I"])
             }
 
             for (const amount of address.amountOut) {
-                await db.query(`
+                await client.query(`
                     INSERT INTO tx_amount(tx_id, address, denom, amount, usd, in_out)
                     VALUES ($1, $2, $3, $4, $5, $6);
                 `, [id, address.address, amount.denom, amount.amount, amount.usd, "O"])
             }
         }
 
+        await client.query("COMMIT")
+
         console.log("tx: %s", hash)
     } catch (error) {
+        await client.query("ROLLBACK")
         console.error("collectTx %s error: %s", hash, error)
+    } finally {
+        client.release()
     }
 }
 
