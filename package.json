@@ -5,7 +5,8 @@
   "main": "src/server.ts",
   "scripts": {
     "collect": "node ./src/collector/collector.js",
-    "notify": "node ./src/notify/notify.js"
+    "notify": "node ./src/notify/notify.js",
+    "finder": "node ./src/finder/finder.js"
   },
   "license": "MIT",
   "dependencies": {
