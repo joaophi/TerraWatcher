@@ -60,10 +60,19 @@ const collectBlock = async (info) => {
 }
 
 const collectTx = async (hash) => {
+    try {
+        const tx = await processTx(hash)
+        await saveTx(tx)
+        console.log("tx: %s", hash)
+    } catch (error) {
+        console.error("collectTx %s error: %s", hash, error)
+    } finally {
+    }
+}
+
+const saveTx = async ({ addresses, timestamp, json }) => {
     const client = await db.connect()
     try {
-        const { addresses, timestamp, json } = await processTx(hash)
-
         await client.query("BEGIN")
 
         const result = await client.query(`
@@ -92,14 +101,12 @@ const collectTx = async (hash) => {
                     VALUES ($1, $2, $3, $4, $5, $6);
                 `, [id, address.address, amount.denom, amount.amount, amount.usd, "O"])
             }
-        }
+        }        
 
         await client.query("COMMIT")
-
-        console.log("tx: %s", hash)
     } catch (error) {
         await client.query("ROLLBACK")
-        console.error("collectTx %s error: %s", hash, error)
+        throw error
     } finally {
         client.release()
     }

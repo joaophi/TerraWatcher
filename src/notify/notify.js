@@ -26,7 +26,7 @@ const notify = async () => {
             await db.query(`
                 UPDATE tx_address
                 SET processed = true
-                WHERE address NOT IN (SELECT address FROM watch)
+                WHERE processed = false AND address NOT IN (SELECT address FROM watch)
             `)
 
             await Promise.all(promises)
