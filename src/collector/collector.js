@@ -70,7 +70,7 @@ const collectTx = async (hash) => {
     }
 }
 
-const saveTx = async ({ addresses, timestamp, json }) => {
+const saveTx = async ({ hash, addresses, timestamp, json }) => {
     const client = await db.connect()
     try {
         await client.query("BEGIN")
