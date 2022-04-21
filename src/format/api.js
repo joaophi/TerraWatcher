@@ -1,20 +1,15 @@
-import { AccAddress, LCDClient } from "@terra-money/terra.js"
-import axios from "axios";
+import { AccAddress, LCDClient } from "@terra-money/terra.js";
+import { contracts, LCD_URL, whitelist } from "../shared/api";
 
 export const chainID = "mainnet"
 
-const lcd = new LCDClient({ URL: "https://lcd.terra.dev", chainID })
-
-const TERRA_ASSETS = 'https://assets.terra.money';
-const config = { baseURL: TERRA_ASSETS }
-const { data: whitelist } = await axios.get('cw20/tokens.json', config)
-const { data: contracts } = await axios.get('cw20/contracts.json', config)
+const lcd = new LCDClient({ URL: LCD_URL, chainID })
 
 export const useLCDClient = () => lcd
 
-export const useWhitelist = () => whitelist[chainID]
+export const useWhitelist = () => whitelist
 
-export const useContracts = () => contracts[chainID]
+export const useContracts = () => contracts
 
 export const useTokenContractQuery = async (address) => {
     const lcd = useLCDClient()

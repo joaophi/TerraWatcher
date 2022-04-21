@@ -1,9 +1,6 @@
-import { Client, Intents } from "discord.js"
-import format from "../format.js"
+import { discord } from "../shared/discord.js"
+import format from "../shared/format.js"
 import getFinderLink from "../format/finderLink.js"
-
-export const discord = new Client({ intents: [Intents.FLAGS.GUILDS] })
-await discord.login("OTYwMzA3OTAyNDUzNzg0NjA2.YkoibQ.U6d8K3vu48db9Wtg1OBOdyy8IDU")
 
 const formatCoin = ({ amount, denom, usd }) => `${amount} ${denom} - ${usd} USD`
 

@@ -1,7 +1,7 @@
 import { createAmountRuleSet, createLogMatcherForAmounts, getTxAmounts } from "@terra-money/log-finder-ruleset"
 import { Coin } from "@terra-money/terra.js"
 import BigNumber from "bignumber.js"
-import { assetsClient } from "../utils/api.js"
+import { whitelist } from "../shared/api.js"
 
 export const getAmounts = (tx, address) => {
     const amountRuleset = createAmountRuleSet()
@@ -92,8 +92,6 @@ const splitCoinData = (coin) => {
         }
     }
 }
-
-const { data: { mainnet: whitelist } } = await assetsClient.get("cw20/tokens.json")
 
 const formatAmount = (amount, denom) => new BigNumber(amount)
     .div(new BigNumber(10).pow(whitelist?.[denom]?.decimals ?? 6))

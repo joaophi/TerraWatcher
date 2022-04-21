@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { lcdClient } from "../utils/api.js"
+import { lcdClient } from "../shared/api.js"
 import { getAddresses } from "./address.js"
 import { getAmounts } from "./amount.js"
 import { getUsdPrice } from "./price.js"

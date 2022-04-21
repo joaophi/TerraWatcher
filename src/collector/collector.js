@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
-import { sleep } from "../utils.js"
-import { lcdClient } from "../utils/api.js"
-import { db } from '../utils/db.js'
+import { sleep } from "../shared/utils.js"
+import { lcdClient } from "../shared/api.js"
+import { db } from '../shared/db.js'
 import { processTx } from './tx.js'
 
 export const collect = async () => {
@@ -21,7 +21,8 @@ export const collect = async () => {
                 : []
             const promises = [...remaining, latestBlock].map(collectBlock)
 
-            lastIndexedHeight = lastHeight
+            if(lastHeight > lastIndexedHeight)
+                lastIndexedHeight = lastHeight
 
             await Promise.all(promises)
         } catch (error) {
@@ -47,7 +48,7 @@ const collectBlock = async (info) => {
             info = await getBlock(info)
         }
 
-        await sleep(5_000)
+        await sleep(10_000)
 
         console.log("start block %s: %d txs", info.block.header.height, info.block.data.txs.length)
 

@@ -1,12 +1,8 @@
 import { createAmountRuleSet, createLogMatcherForAmounts, getTxAmounts } from "@terra-money/log-finder-ruleset";
 import { AccAddress, Coin } from "@terra-money/terra.js";
-import axios from "axios";
 import BN from "bignumber.js";
-import format from "./format.js";
-
-const assetsConfig = { baseURL: "https://assets.terra.money" }
-const { data: { mainnet: whitelist } } = await axios.get("cw20/tokens.json", assetsConfig)
-const { data: { mainnet: contracts } } = await axios.get("cw20/contracts.json", assetsConfig)
+import { contracts, whitelist } from "../shared/api.js";
+import format from "../shared/format.js";
 
 const TERRA_ADDRESS_REGEX = /(terra[0-9][a-z0-9]{38})/g;
 const splitCoinData = (coin) => {
@@ -125,7 +121,7 @@ const parseAmounts = (tx, address) => {
     }
 }
 
-export const parseAddresses = (tx, address) => {
+const parseAddresses = (tx, address) => {
     const addresses = new Set()
     tx.tx.value.msg
         .forEach(msg =>

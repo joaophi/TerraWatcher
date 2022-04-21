@@ -1,4 +1,4 @@
-import { fcdClient, swapClient } from "../utils/api.js"
+import { fcdClient, swapClient } from "../shared/api.js"
 
 const ONE_HOUR = 60 * 60 * 1000
 const CACHE = new Map()

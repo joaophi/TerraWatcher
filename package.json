@@ -1,12 +1,12 @@
 {
-  "name": "server",
+  "name": "terra-watch",
   "version": "1.0.0",
   "type": "module",
-  "main": "src/server.ts",
   "scripts": {
     "collect": "node ./src/collector/collector.js",
     "notify": "node ./src/notify/notify.js",
-    "finder": "node ./src/finder/finder.js"
+    "finder": "node ./src/finder/finder.js",
+    "command": "node ./src/command/command.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -26,11 +26,6 @@
     "lodash": "^4.17.21",
     "luxon": "^2.1.1",
     "pg": "^8.7.3",
-    "sqlite": "^4.0.25",
-    "sqlite3": "^5.0.2",
     "terra-utils": "^1.1.2"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.15"
   }
 }

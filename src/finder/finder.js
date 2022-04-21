@@ -1,7 +1,7 @@
 import express from "express"
 import path from "path"
-import { isOneSided, parseTx } from "../amount.js"
-import { fcdClient } from "../utils/api.js"
+import { isOneSided, parseTx } from "./amount.js"
+import { fcdClient } from "../shared/api.js"
 
 export const server = () => {
     const client = fcdClient

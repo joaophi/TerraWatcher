@@ -1,10 +1,12 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
-import format from "./format.js";
-import getFinderLink, { LABELS } from "./format/finderLink.js";
+import { db } from "../shared/db.js";
+import { discord, DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from "../shared/discord.js";
+import format from "../shared/format.js";
+import getFinderLink, { LABELS } from "../format/finderLink.js";
 
-export const commands = async (db, discord) => {
+export const commands = async () => {
     const commands = [
         new SlashCommandBuilder()
             .setName("watch")
@@ -15,7 +17,7 @@ export const commands = async (db, discord) => {
                     .setRequired(true)
             )
             .addNumberOption(option =>
-                option.setName("minimum")
+                option.setName("amount")
                     .setDescription("The minimum amount to notify")
                     .setRequired(true)
             ),
@@ -31,10 +33,10 @@ export const commands = async (db, discord) => {
             .setName("watchlist")
             .setDescription("Show channel watchlist"),
         new SlashCommandBuilder()
-            .setName("min")
+            .setName("all")
             .setDescription("Change minimum amount of all watches in this channel")
             .addNumberOption(option =>
-                option.setName("minimum")
+                option.setName("amount")
                     .setDescription("The minimum amount to notify")
                     .setRequired(true)
             ),
@@ -58,105 +60,107 @@ export const commands = async (db, discord) => {
                 option.setName("address")
                     .setDescription("The address to be unlabeled")
                     .setRequired(true)
-            )
+            ),
+        new SlashCommandBuilder()
+            .setName("labels")
+            .setDescription("Show Label list"),
     ].map(command => command.toJSON());
 
-    const rest = new REST({ version: '9' }).setToken(process.env["DISCORD_TOKEN"]);
+    await new REST({ version: "9" })
+        .setToken(DISCORD_TOKEN)
+        .put(Routes.applicationGuildCommands(DISCORD_APP_ID, DISCORD_GUILD_ID), { body: commands })
 
-    rest.put(Routes.applicationGuildCommands("960307902453784606", "959199128259285093"), { body: commands })
-        .then(() => console.log('Successfully registered application commands.'))
-        .catch(console.error)
+    console.log("Successfully registered application commands.")
 
     discord.on("interactionCreate", async (interaction) => {
         if (!interaction.isCommand())
             return
 
         await interaction.deferReply()
-        await myCommands[interaction.commandName](db, interaction)
+        await handlers[interaction.commandName](interaction)
     })
 }
 
-const myCommands = {
-    watch: async (db, interaction) => {
+const handlers = {
+    watch: async (interaction) => {
         const address = interaction.options.getString("address")
-        const minimum = interaction.options.getNumber("minimum")
-        await db.run(
-            `INSERT OR REPLACE INTO watch (address, channel, minimum, type)
-             VALUES ($address, $channel, $minimum, 'swap')`,
-            {
-                $address: address,
-                $channel: interaction.channelId,
-                $minimum: minimum
-            }
+        const amount = interaction.options.getNumber("amount")
+        await db.query(
+            `INSERT INTO watch (address, channel, amount)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (address, channel) DO
+             UPDATE SET amount = $3`,
+            [address, interaction.channelId, amount]
         )
-        await interaction.editReply(`ADDED ${getFinderLink(address, "address", address)} - ${format.amount(minimum, 0)} UST`)
+        await interaction.editReply(`ADDED ${getFinderLink(address, "address", address)} - ${format.amount(amount, 0)} UST`)
     },
-    unwatch: async (db, interaction) => {
+    unwatch: async (interaction) => {
         const address = interaction.options.getString("address")
-        await db.run(
+        await db.query(
             `DELETE FROM watch
-             WHERE address = $address
-               AND channel = $channel`,
-            {
-                $address: address,
-                $channel: interaction.channelId,
-            }
+             WHERE address = $1
+               AND channel = $2`,
+            [address, interaction.channelId]
         )
         await interaction.editReply(`REMOVED ${address}`)
     },
-    watchlist: async (db, interaction) => {
-        const watches = await db.all(
-            `SELECT address, minimum
+    watchlist: async (interaction) => {
+        const { rows: watches } = await db.query(
+            `SELECT address, amount
              FROM watch
-             WHERE channel = $channel`,
-            {
-                $channel: interaction.channelId,
-            }
+             WHERE channel = $1`,
+            [interaction.channelId]
         )
         const reply = watches
-            .map(({ address, minimum }) => `${getFinderLink(address, "address", address)} - ${format.amount(minimum, 0)} UST`)
+            .map(({ address, amount }) => `${getFinderLink(address, "address", address)} - ${format.amount(amount, 0)} UST`)
             .join("\n")
         await interaction.editReply(reply || "None")
     },
-    min: async (db, interaction) => {
-        const minimum = interaction.options.getNumber("minimum")
-        await db.all(
+    all: async (interaction) => {
+        const amount = interaction.options.getNumber("amount")
+        await db.query(
             `UPDATE watch
-             SET minimum = $minimum
-             WHERE channel = $channel`,
-            {
-                $minimum: minimum,
-                $channel: interaction.channelId,
-            }
+             SET amount = $1
+             WHERE channel = $2`,
+            [amount, interaction.channelId]
         )
-        await interaction.editReply(`CHANGED ALL WATCHES TO ${format.amount(minimum, 0)} UST MINIMUM`)
+        await interaction.editReply(`CHANGED ALL WATCHES TO ${format.amount(amount, 0)} UST MINIMUM`)
     },
-    label: async (db, interaction) => {
+    label: async (interaction) => {
         const address = interaction.options.getString("address")
         const label = interaction.options.getString("label")
 
-        await db.all(
-            `INSERT OR REPLACE INTO label (address, label)
-             VALUES ($address, $label)`,
-            {
-                $address: address,
-                $label: label
-            }
+        await db.query(
+            `INSERT INTO label (address, label)
+             VALUES ($1, $2)
+             ON CONFLICT (address) DO
+             UPDATE SET label = $2`,
+            [address, label]
         )
+        await interaction.editReply(`LABELLED ${getFinderLink(address, "address", address)} AS ${label}`)
         LABELS.set(address, label)
-        await interaction.editReply(`LABELLED ${address} TO ${label}`)
     },
-    unlabel: async (db, interaction) => {
+    unlabel: async (interaction) => {
         const address = interaction.options.getString("address")
 
-        await db.all(
+        await db.query(
             `DELETE FROM label
-             WHERE address = $address`,
-            {
-                $address: address,
-            }
+             WHERE address = $1`,
+            [address]
         )
         LABELS.delete(address)
-        await interaction.editReply(`REMOVED LABEL FROM ${address}`)
+        await interaction.editReply(`REMOVED LABEL FROM ${getFinderLink(address, "address", address)}`)
+    },
+    labels: async (interaction) => {
+        const { rows: labels } = await db.query(
+            `SELECT address, label
+             FROM label`
+        )
+        const reply = labels
+            .map(({ address, label }) => `${getFinderLink(address, "address", address)} - ${label}`)
+            .join("\n")
+        await interaction.editReply(reply || "None")
     }
 }
+
+await commands()

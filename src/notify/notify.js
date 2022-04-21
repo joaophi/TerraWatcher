@@ -1,9 +1,9 @@
 import { AccAddress } from "@terra-money/terra.js"
-import format from "../format.js"
+import { contracts, lcdClient, whitelist } from "../shared/api.js"
+import { db } from "../shared/db.js"
+import format from "../shared/format.js"
 import getFinderLink from "../format/finderLink.js"
-import { sleep } from "../utils.js"
-import { assetsClient, lcdClient } from "../utils/api.js"
-import { db } from "../utils/db.js"
+import { sleep } from "../shared/utils.js"
 import { sendDiscordNotification } from "./discord.js"
 
 const notify = async () => {
@@ -105,9 +105,6 @@ const getAmount = async (tx, address) => {
     `, [tx, address])
     return res.rows.map(({ denom, amount, usd, in_out }) => { return { denom, amount, usd, in_out } })
 }
-
-const { data: { mainnet: whitelist } } = await assetsClient.get("cw20/tokens.json")
-const { data: { mainnet: contracts } } = await assetsClient.get("cw20/contracts.json")
 
 const isTerraAddress = (keyword) => { return keyword && keyword.length === 44 && keyword.indexOf("terra") > -1 }
 
