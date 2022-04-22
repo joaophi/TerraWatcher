@@ -1,4 +1,5 @@
-import axios from "axios";
+import "dotenv/config"
+import axios from "axios"
 
 export const LCD_URL = process.env["LCD_URL"] ?? "https://lcd.terra.dev"
 export const FCD_URL = process.env["FCD_URL"] ?? "https://fcd.terra.dev"
