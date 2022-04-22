@@ -1,50 +1,44 @@
 import { AccAddress } from "@terra-money/terra.js"
+import getFinderLink from "../format/finderLink.js"
 import { contracts, lcdClient, whitelist } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import format from "../shared/format.js"
-import getFinderLink from "../format/finderLink.js"
 import { sleep } from "../shared/utils.js"
 import { sendDiscordNotification } from "./discord.js"
 
 const notify = async () => {
-    while (true) {
-        try {
-            const res = await db.query(`
-                SELECT W.address, W.channel, W.amount, T.id, T.hash, T.timestamp
-                FROM watch W
+    const client = await db.connect()
+    try {
+        while (true) {
+            try {
+                await client.query(`
+                    UPDATE tx_address
+                    SET processed = true
+                    WHERE processed = false AND address NOT IN (SELECT address FROM watch)
+                `)
+
+                const res = await client.query(`
+                    SELECT W.address, W.channel, W.amount, T.id, T.hash, T.timestamp
+                    FROM watch W
                     INNER JOIN tx_address A ON A.address = W.address
                     INNER JOIN tx T ON T.id = A.tx_id
-                WHERE A.processed = false
-            `)
-            if (!res.rows.length) {
+                    WHERE A.processed = false
+                `)
+
+                res.rows.map(notifyTx)
+            } catch (error) {
+                console.error("notify error: %s", error.message)
+            } finally {
                 await sleep(5_000)
-                continue
             }
-
-            const promises = res.rows.map(notifyTx)
-
-            await db.query(`
-                UPDATE tx_address
-                SET processed = true
-                WHERE processed = false AND address NOT IN (SELECT address FROM watch)
-            `)
-
-            await Promise.all(promises)
-        } catch (error) {
-            console.error("notify error: %s", error.message)
         }
+    } finally {
+        client.release()
     }
 }
 
 const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
     try {
-        const allAddresses = await getAddressess(id)
-        const addresses = []
-        for (const a of allAddresses) {
-            if (a != address && await isAccount(a)) {
-                addresses.push(a)
-            }
-        }
         const amounts = (await getAmount(id, address)).map(parseAmount)
         const amountIn = amounts.filter(amount => amount.in_out == "I")
         const amountOut = amounts.filter(amount => amount.in_out == "O")
@@ -53,6 +47,13 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
         const outUsd = amountOut.reduce((a, b) => a + b.usd, 0)
 
         if (outUsd > amount || inUsd > amount) {
+            const allAddresses = await getAddressess(id)
+            const addresses = []
+            for (const a of allAddresses) {
+                if (a != address && await isAccount(a)) {
+                    addresses.push(a)
+                }
+            }
             sendDiscordNotification(address, channel, amount, amountIn, amountOut, hash, timestamp, addresses)
             console.log("notifyTx %d sent", id)
         } else {

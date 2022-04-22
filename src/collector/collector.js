@@ -1,7 +1,7 @@
 import * as crypto from 'crypto'
-import { sleep } from "../shared/utils.js"
 import { lcdClient } from "../shared/api.js"
 import { db } from '../shared/db.js'
+import { sleep } from "../shared/utils.js"
 import { processTx } from './tx.js'
 
 export const collect = async () => {
@@ -20,10 +20,13 @@ export const collect = async () => {
                 : [];
             [...remaining, latestBlock].map(collectBlock)
 
-            if(!lastIndexedHeight || lastHeight > lastIndexedHeight)
+            if (!lastIndexedHeight || lastHeight > lastIndexedHeight)
                 lastIndexedHeight = lastHeight
+
         } catch (error) {
             console.error("collect error: %s", error.message)
+        } finally {
+            await sleep(5_000)
         }
     }
 }
@@ -99,7 +102,7 @@ const saveTx = async ({ hash, addresses, timestamp, json }) => {
                     VALUES ($1, $2, $3, $4, $5, $6);
                 `, [id, address.address, amount.denom, amount.amount, amount.usd, "O"])
             }
-        }        
+        }
 
         await client.query("COMMIT")
     } catch (error) {
