@@ -56,7 +56,7 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
             sendDiscordNotification(address, channel, amount, amountIn, amountOut, hash, timestamp, addresses)
             console.log("notifyTx %d sent", id)
         } else {
-            console.log("notifyTx %d dont needed", id)
+            console.log("notifyTx %d not needed", id)
         }
 
         await db.query(`

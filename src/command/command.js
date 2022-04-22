@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
+import getFinderLink, { LABELS } from "../format/finderLink.js";
 import { db } from "../shared/db.js";
 import { discord, DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from "../shared/discord.js";
 import format from "../shared/format.js";
-import getFinderLink, { LABELS } from "../format/finderLink.js";
 
 export const commands = async () => {
     const commands = [
@@ -76,6 +76,7 @@ export const commands = async () => {
         if (!interaction.isCommand())
             return
 
+        console.log(`command '${interaction.commandName}' received`)
         await interaction.deferReply()
         await handlers[interaction.commandName](interaction)
     })
