@@ -12,19 +12,16 @@ export const collect = async () => {
 
             const lastHeight = Number(latestBlock.block.header.height)
             if (lastHeight == lastIndexedHeight) {
-                await sleep(5_000)
                 continue
             }
 
             const remaining = lastIndexedHeight
                 ? Array.from({ length: lastHeight - lastIndexedHeight - 1 }, (_, i) => i + lastIndexedHeight + 1)
-                : []
-            const promises = [...remaining, latestBlock].map(collectBlock)
+                : [];
+            [...remaining, latestBlock].map(collectBlock)
 
-            if(lastHeight > lastIndexedHeight)
+            if(!lastIndexedHeight || lastHeight > lastIndexedHeight)
                 lastIndexedHeight = lastHeight
-
-            await Promise.all(promises)
         } catch (error) {
             console.error("collect error: %s", error.message)
         }
