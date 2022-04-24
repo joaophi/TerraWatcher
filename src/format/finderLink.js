@@ -7,7 +7,8 @@ export const LABELS = new Map()
 export const loadLabels = async (db) => {
     const lbls = await db.all(
         `SELECT address, label
-         FROM label`
+         FROM address
+         WHERE label IS NOT NULL`
     )
     LABELS.clear()
     lbls.forEach(({ address, label }) => LABELS.set(address, label));

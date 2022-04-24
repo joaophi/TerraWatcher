@@ -1,6 +1,5 @@
-import { AccAddress } from "@terra-money/terra.js"
 import getFinderLink from "../format/finderLink.js"
-import { contracts, lcdClient, whitelist } from "../shared/api.js"
+import { contracts, whitelist } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import format from "../shared/format.js"
 import { sleep } from "../shared/utils.js"
@@ -47,13 +46,7 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
         const outUsd = amountOut.reduce((a, b) => a + b.usd, 0)
 
         if (outUsd > amount || inUsd > amount) {
-            const allAddresses = await getAddressess(id)
-            const addresses = []
-            for (const a of allAddresses) {
-                if (a != address && await isAccount(a)) {
-                    addresses.push(a)
-                }
-            }
+            const addresses = await getAddressess(id)
             sendDiscordNotification(address, channel, amount, amountIn, amountOut, hash, timestamp, addresses)
             console.log("notifyTx %d sent", id)
         } else {
@@ -73,28 +66,13 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
 
 const getAddressess = async (tx) => {
     const res = await db.query(`
-        SELECT address
-        FROM tx_address
-        WHERE tx_id = $1
+        SELECT T.address
+        FROM tx_address T
+         INNER JOIN address A ON A.address = T.address
+        WHERE T.tx_id = $1
+          AND A.account = true
     `, [tx])
     return res.rows.map(({ address }) => address)
-}
-
-const isAccount = async (address) => {
-    const lcd = lcdClient
-
-    if (AccAddress.validate(address)) {
-        if (contracts?.[address]) {
-            return false
-        }
-
-        try {
-            await lcd.get(`/terra/wasm/v1beta1/contracts/${address}`)
-            return false
-        } catch (error) {
-            return true
-        }
-    }
 }
 
 const getAmount = async (tx, address) => {

@@ -1,44 +1,49 @@
 import "dotenv/config"
 import express from "express"
 import path from "path"
-import { fcdClient } from "../shared/api.js"
-import { isOneSided, parseTx } from "./amount.js"
+import { isAccount } from "../shared/account.js"
+import { getTxs } from "./indexer.js"
 
 const APP_DIR = process.env["APP_DIR"]
 
 const app = express()
 
 app.use((req, res, next) => {
-    console.log(`${req.method}:${req.url} ${res.statusCode} FROM ${req.ip}`)
+    console.log(`${req.method}:${req.url} FROM ${req.ip}`)
     next()
 })
 
-const proxyPass = async (req, res) => {
-    try {
-        const response = await fcdClient.get(req.url.slice(4))
-        res.status(response.status)
-        res.json(response.data)
-    } catch (error) {
-        res.status(error.response?.status ?? 500)
-        res.json(error.response?.data ?? { error: error.message })
-    }
-}
-
 app.get("/api/v1/txs", async (req, res) => {
     try {
-        const response = await fcdClient.get(req.url.slice(4))
-        response.data.txs = response.data.txs
-            .map(tx => parseTx(tx, req.query.account))
-            .filter(isOneSided)
-        res.status(response.status)
-        res.json(response.data)
+        if (!req.query.account) {
+            throw new Error("account required")
+        }
+        const allTxs = (await getTxs(req.query.account, !req.query.offset))
+        const after = allTxs.findIndex(tx => tx.txHash == req.query.offset) + 1
+
+        const limit = Number(req.query.limit) ?? 100
+        const txs = allTxs.slice(after, after + limit)
+        const next = txs.at(-1).txHash
+
+        res.json({ limit, txs, next })
     } catch (error) {
         res.status(error.response?.status ?? 500)
         res.json(error.response?.data ?? { error: error.message })
     }
 })
 
-app.get("/api/*", proxyPass)
+app.get("/api/v1/label", async (req, res) => {
+    try {
+        if (!req.query.account || !(await isAccount(req.query.account))) {
+            throw new Error("account required")
+        }
+        const label = "teste"
+        res.json({ label })
+    } catch (error) {
+        res.status(error.response?.status ?? 500)
+        res.json(error.response?.data ?? { error: error.message })
+    }
+})
 
 app.use(express.static(APP_DIR))
 
