@@ -14,9 +14,9 @@ export const swapClient = axiosRateLimit(axios.create({ baseURL: SWP_URL }), { m
 export const assetsClient = axios.create({ baseURL: ASS_URL })
 
 const retryConfig = {
-    retries: 10,
+    retries: 0,
     retryDelay: (retryCount) => retryCount * 10000,
-    retryCondition: (_error) => true
+    // retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || (!error.response || (error.response.status >= 400 && error.response.status <= 499))
 }
 axiosRetry(lcdClient, retryConfig)
 axiosRetry(fcdClient, retryConfig)
