@@ -17,10 +17,11 @@ const notify = async () => {
                 `)
 
                 const res = await client.query(`
-                    SELECT W.address, W.channel, W.amount, T.id, T.hash, T.timestamp
+                    SELECT W.address, AD.label, W.channel, W.amount, T.id, T.hash, T.timestamp
                     FROM watch W
-                    INNER JOIN tx_address A ON A.address = W.address
-                    INNER JOIN tx T ON T.id = A.tx_id
+                        INNER JOIN tx_address A ON A.address = W.address
+                        INNER JOIN tx T ON T.id = A.tx_id
+                        INNER JOIN address AD ON AD.address = W.address
                     WHERE A.processed = false
                 `)
 
@@ -36,7 +37,7 @@ const notify = async () => {
     }
 }
 
-const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
+const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp }) => {
     try {
         const amounts = (await getAmount(id, address)).map(parseAmount)
         const amountIn = amounts.filter(amount => amount.in_out == "I")
@@ -47,7 +48,7 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
 
         if (outUsd > amount || inUsd > amount) {
             const addresses = await getAddressess(id)
-            sendDiscordNotification(address, channel, amount, amountIn, amountOut, hash, timestamp, addresses)
+            sendDiscordNotification(address, label, channel, amountIn, amountOut, hash, timestamp, addresses.filter(it => it.address !== address))
             console.log("notifyTx %d sent", id)
         } else {
             console.log("notifyTx %d not needed", id)
@@ -65,24 +66,24 @@ const notifyTx = async ({ address, channel, amount, id, hash, timestamp }) => {
 }
 
 const getAddressess = async (tx) => {
-    const res = await db.query(`
-        SELECT T.address
+    const { rows } = await db.query(`
+        SELECT T.address, A.label
         FROM tx_address T
          INNER JOIN address A ON A.address = T.address
         WHERE T.tx_id = $1
           AND A.account = true
     `, [tx])
-    return res.rows.map(({ address }) => address)
+    return rows
 }
 
 const getAmount = async (tx, address) => {
-    const res = await db.query(`
+    const { rows } = await db.query(`
         SELECT denom, amount, usd, in_out
         FROM tx_amount
         WHERE tx_id = $1
           AND address = $2
     `, [tx, address])
-    return res.rows.map(({ denom, amount, usd, in_out }) => { return { denom, amount, usd, in_out } })
+    return rows.map(({ denom, amount, usd, in_out }) => { return { denom, amount, usd, in_out } })
 }
 
 const isTerraAddress = (keyword) => { return keyword && keyword.length === 44 && keyword.indexOf("terra") > -1 }
