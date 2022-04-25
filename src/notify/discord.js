@@ -1,24 +1,15 @@
-import { truncate } from "terra-utils"
 import getFinderLink from "../format/finderLink.js"
 import { discord } from "../shared/discord.js"
 import format from "../shared/format.js"
 
 const formatCoin = ({ amount, denom, usd }) => `${amount} ${denom} - ${usd} USD`
 
-const getLabel = (address, label) => {
-    if (label) {
-        return `${label} (${truncate(address)})`
-    } else {
-        return address
-    }
-}
-
 export const sendDiscordNotification = async (address, label, channelId, amountIn, amountOut, hash, timestamp, addresses) => {
     const embeds = {
         fields: [
             {
                 name: "ADDRESS",
-                value: getFinderLink(getLabel(address, label), "address", address),
+                value: getFinderLink(format.label(address, label), "address", address),
             },
             ...(amountIn.length ? [{
                 name: "AMOUNT IN",
@@ -31,7 +22,7 @@ export const sendDiscordNotification = async (address, label, channelId, amountI
             {
                 name: "ACCOUNTS INVOLVED",
                 value: addresses
-                    .map(({ address, label }) => getFinderLink(getLabel(address, label), "address", address))
+                    .map(({ address, label }) => getFinderLink(format.label(address, label), "address", address))
                     .join("\n") || "not found"
             },
             {

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { DateTime } from "luxon";
+import { truncate } from "terra-utils";
 
 const formatDecimal = (number) => new BigNumber(number)
   .decimalPlaces(6, BigNumber.ROUND_DOWN)
@@ -28,6 +29,14 @@ const formatDenom = (denom) => {
   return denom;
 };
 
+const formatLabel = (address, label) => {
+  if (label) {
+      return `${label} (${truncate(address)})`
+  } else {
+      return address
+  }
+}
+
 const formatCoin = ({ amount, denom }) => [formatAmount(amount), formatDenom(denom)].join(" ")
 
 const format = {
@@ -36,6 +45,7 @@ const format = {
   denom: formatDenom,
   coin: formatCoin,
   coins: (coins) => coins.map(formatCoin),
+  label: formatLabel,
 
   date: (param) => {
     const dt =

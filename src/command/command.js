@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
-import getFinderLink, { LABELS } from "../format/finderLink.js";
+import getFinderLink from "../format/finderLink.js";
 import { isAccount } from "../shared/account.js";
 import { db } from "../shared/db.js";
 import { discord, DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from "../shared/discord.js";
@@ -108,13 +108,14 @@ const handlers = {
     },
     watchlist: async (interaction) => {
         const { rows: watches } = await db.query(
-            `SELECT address, amount
-             FROM watch
-             WHERE channel = $1`,
+            `SELECT W.address, A.label, W.amount
+             FROM watch W
+                INNER JOIN address A ON A.address = W.address
+             WHERE W.channel = $1`,
             [interaction.channelId]
         )
         const reply = watches
-            .map(({ address, amount }) => `${getFinderLink(address, "address", address)} - ${format.amount(amount, 0)} UST`)
+            .map(({ address, label, amount }) => `${getFinderLink(format.label(address, label), "address", address)} - ${format.amount(amount, 0)} UST`)
             .join("\n")
         await interaction.editReply(reply || "None")
     },
@@ -140,7 +141,6 @@ const handlers = {
             [address, label, await isAccount(address)]
         )
         await interaction.editReply(`LABELLED ${getFinderLink(address, "address", address)} AS ${label}`)
-        LABELS.set(address, label)
     },
     unlabel: async (interaction) => {
         const address = interaction.options.getString("address")
@@ -151,7 +151,6 @@ const handlers = {
              WHERE address = $1`,
             [address]
         )
-        LABELS.delete(address)
         await interaction.editReply(`REMOVED LABEL FROM ${getFinderLink(address, "address", address)}`)
     },
     labels: async (interaction) => {
