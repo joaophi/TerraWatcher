@@ -16,7 +16,9 @@ export const assetsClient = axios.create({ baseURL: ASS_URL })
 const retryConfig = {
     retries: 0,
     retryDelay: (retryCount) => retryCount * 10000,
-    // retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || (!error.response || (error.response.status >= 400 && error.response.status <= 499))
+    retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || (
+        error.code !== 'ECONNABORTED' && (!error.response || error.response.status == 429)
+    )
 }
 axiosRetry(lcdClient, retryConfig)
 axiosRetry(fcdClient, retryConfig)

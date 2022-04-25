@@ -6,8 +6,7 @@ import { getAddresses } from "./address.js"
 import { getAmounts } from "./amount.js"
 import { getUsdPrice } from "./price.js"
 
-const processTx = async (hash) => {
-    const tx = await getTx(hash)
+export const processTx = async (tx) => {
     const addresses = getAddresses(tx)
         .map(address => {
             return {
@@ -107,17 +106,18 @@ const getTx = async (hash) => {
     }
 }
 
-export const collectTx = async (hash, processed = false) => {
+export const collectTx = async (hash) => {
     try {
-        const tx = await processTx(hash)
-        await saveTx(tx, processed)
+        const raw_tx = await getTx(hash)
+        const tx = await processTx(raw_tx)
+        await saveTx(tx)
         console.log("tx: %s", hash)
     } catch (error) {
         console.error("collectTx %s error: %s", hash, error.message)
     }
 }
 
-const saveTx = async ({ hash, addresses, timestamp, json }, processed) => {
+const saveTx = async ({ hash, addresses, timestamp, json }) => {
     const client = await db.connect()
     try {
         await client.query("BEGIN")
@@ -145,8 +145,8 @@ const saveTx = async ({ hash, addresses, timestamp, json }, processed) => {
 
             await client.query(`
                 INSERT INTO tx_address(tx_id, address, processed)
-                VALUES ($1, $2, $3)
-            `, [id, address.address, processed])
+                VALUES ($1, $2, false)
+            `, [id, address.address])
 
             for (const amount of address.amountIn) {
                 await client.query(`

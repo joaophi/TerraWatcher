@@ -27,7 +27,7 @@ export const sendDiscordNotification = async (address, label, channelId, amountI
             },
             {
                 name: "HASH",
-                value: getFinderLink(hash, "tx", hash),
+                value: getFinderLink(format.truncate(hash, [8, 8]), "tx", hash),
             },
             {
                 name: "TIME",
