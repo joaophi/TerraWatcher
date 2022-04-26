@@ -46,7 +46,7 @@ const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp }
         const inUsd = amountIn.reduce((a, b) => a + b.usd, 0)
         const outUsd = amountOut.reduce((a, b) => a + b.usd, 0)
 
-        if (outUsd > amount || inUsd > amount) {
+        if (outUsd >= amount || inUsd >= amount) {
             const addresses = await getAddressess(id)
             sendDiscordNotification(address, label, channel, amountIn, amountOut, hash, timestamp, addresses.filter(it => it.address !== address))
             console.log("notifyTx %d sent", id)

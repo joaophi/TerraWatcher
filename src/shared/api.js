@@ -14,7 +14,7 @@ export const swapClient = axiosRateLimit(axios.create({ baseURL: SWP_URL }), { m
 export const assetsClient = axios.create({ baseURL: ASS_URL })
 
 const retryConfig = {
-    retries: 0,
+    retries: 10,
     retryDelay: (retryCount) => retryCount * 10000,
     retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || (
         error.code !== 'ECONNABORTED' && (!error.response || error.response.status == 429)
