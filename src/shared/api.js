@@ -1,6 +1,6 @@
 import axios from "axios"
 import axiosRateLimit from "axios-rate-limit"
-import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry"
+import axiosRetry, { exponentialDelay, isNetworkOrIdempotentRequestError } from "axios-retry"
 import "dotenv/config"
 
 export const LCD_URL = process.env["LCD_URL"] ?? "https://lcd.terra.dev"
@@ -15,7 +15,11 @@ export const assetsClient = axios.create({ baseURL: ASS_URL })
 
 const retryConfig = {
     retries: 10,
-    retryDelay: (retryCount) => retryCount * 10000,
+    retryDelay: (retryCount, error) => {
+        const delay = exponentialDelay(retryCount)
+        console.error("http error %s, retrying in %d ms", error.message, delay)
+        return delay
+    },
     retryCondition: (error) => isNetworkOrIdempotentRequestError(error) || (
         error.code !== 'ECONNABORTED' && (!error.response || error.response.status == 429)
     )
