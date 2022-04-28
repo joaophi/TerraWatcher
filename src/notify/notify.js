@@ -25,7 +25,8 @@ const notify = async () => {
                     WHERE A.processed = false
                 `)
 
-                res.rows.map(notifyTx)
+                const promises = res.rows.map(notifyTx)
+                await Promise.all(promises)
             } catch (error) {
                 console.error("notify error: %s", error.message)
             } finally {
