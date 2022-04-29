@@ -2,9 +2,9 @@ import { AccAddress } from "@terra-money/terra.js"
 import { contracts, lcdClient } from "./api.js"
 import { db } from "./db.js"
 
-export const saveAddress = async (address) => {
+export const saveAddress = async (address, client = db) => {
     if (AccAddress.validate(address)) {
-        const { rows } = await db.query(`
+        const { rows } = await client.query(`
             SELECT account
             FROM address
             WHERE address = $1
@@ -22,7 +22,7 @@ export const saveAddress = async (address) => {
             account = true
         }
 
-        await db.query(`
+        await client.query(`
             INSERT INTO address(address, label, account)
             VALUES ($1, NULL, $2)
             ON CONFLICT (address) DO

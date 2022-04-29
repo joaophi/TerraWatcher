@@ -130,7 +130,7 @@ const saveTx = async ({ hash, addresses, timestamp, json }) => {
         const id = result.rows[0].id
 
         for (const address of addresses) {
-            await saveAddress(address.address)
+            await saveAddress(address.address, client)
 
             await client.query(`
                 INSERT INTO tx_address(tx_id, address, processed)
