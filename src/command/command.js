@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v9";
 import getFinderLink from "../format/finderLink.js";
-import { isAccount } from "../shared/account.js";
+import { saveAddress } from "../shared/account.js";
 import { db } from "../shared/db.js";
 import { discord, DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from "../shared/discord.js";
 import format from "../shared/format.js";
@@ -133,12 +133,12 @@ const handlers = {
         const address = interaction.options.getString("address")
         const label = interaction.options.getString("label")
 
+        await saveAddress(address)
         await db.query(
-            `INSERT INTO address (address, label, account)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (address) DO
-             UPDATE SET label = $2`,
-            [address, label, await isAccount(address)]
+            `UPDATE address
+             SET label = $2
+             WHERE address = $1`,
+            [address, label]
         )
         await interaction.editReply(`LABELLED ${getFinderLink(address, "address", address)} AS ${label}`)
     },

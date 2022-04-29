@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { isAccount } from "../shared/account.js"
+import { saveAddress } from "../shared/account.js"
 import { lcdClient } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import { getAddresses } from "./address.js"
@@ -130,18 +130,7 @@ const saveTx = async ({ hash, addresses, timestamp, json }) => {
         const id = result.rows[0].id
 
         for (const address of addresses) {
-            const { rows } = await client.query(`
-                SELECT 1
-                FROM address
-                WHERE address = $1
-            `, [address.address])
-            if (!rows.length) {
-                await client.query(`
-                    INSERT INTO address(address, label, account)
-                    VALUES ($1, NULL, $2)
-                    ON CONFLICT (address) DO NOTHING
-                `, [address.address, await isAccount(address.address)])
-            }
+            await saveAddress(address.address)
 
             await client.query(`
                 INSERT INTO tx_address(tx_id, address, processed)

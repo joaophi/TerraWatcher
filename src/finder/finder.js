@@ -2,7 +2,7 @@ import "dotenv/config"
 import express from "express"
 import path from "path"
 import { processTx } from "../collector/tx.js"
-import { isAccount } from "../shared/account.js"
+import { saveAddress } from "../shared/account.js"
 import { fcdClient } from "../shared/api.js"
 import { db } from "../shared/db.js"
 
@@ -38,7 +38,7 @@ app.get("/api/v1/txs", async (req, res) => {
                 .map(async tx => {
                     const address = tx.addresses.filter(a => a.address == req.query.account)
                     const addresses = tx.addresses.map(a => a.address).filter(a => a != req.query.account)
-                    const accounts = await Promise.all(addresses.map(a => isAccount(a)))
+                    const accounts = await Promise.all(addresses.map(a => saveAddress(a)))
                     return {
                         txHash: tx.hash,
                         addresses: addresses.filter((_, index) => accounts[index]),

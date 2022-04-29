@@ -1,19 +1,34 @@
 import { AccAddress } from "@terra-money/terra.js"
 import { contracts, lcdClient } from "./api.js"
+import { db } from "./db.js"
 
-export const isAccount = async (address) => {
-    const lcd = lcdClient
-
+export const saveAddress = async (address) => {
     if (AccAddress.validate(address)) {
-        if (contracts?.[address]) {
-            return false
+        const { rows } = await db.query(`
+            SELECT account
+            FROM address
+            WHERE address = $1
+        `, [address])
+        if (rows.length) {
+            return rows[0].account
         }
 
+        let account = false
         try {
-            await lcd.get(`/terra/wasm/v1beta1/contracts/${address}`)
-            return false
+            if (!contracts?.[address]) {
+                await lcdClient.get(`/terra/wasm/v1beta1/contracts/${address}`)
+            }
         } catch (error) {
-            return true
+            account = true
         }
+
+        await db.query(`
+            INSERT INTO address(address, label, account)
+            VALUES ($1, NULL, $2)
+            ON CONFLICT (address) DO
+            UPDATE SET account = $2
+        `, [address, account])
+
+        return account
     }
 }
