@@ -56,15 +56,12 @@ app.get("/api/v1/txs", async (req, res) => {
 
 app.get("/api/v1/label", async (req, res) => {
     try {
-        if (!req.query.account) {
-            throw new Error("account required")
-        }
-        const { rows: [row] } = await db.query(`
-            SELECT label
+        const { rows } = await db.query(`
+            SELECT address, label
             FROM address
-            WHERE address = $1
-        `, [req.query.account])
-        res.json(row ?? { label: null })
+            WHERE label IS NOT NULL
+        `)
+        res.json(Object.fromEntries(rows.map(a => [a.address, a.label])))
     } catch (error) {
         res.status(error.response?.status ?? 500)
         res.json(error.response?.data ?? { error: error.message })
