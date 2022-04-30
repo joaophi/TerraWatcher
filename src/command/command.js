@@ -21,6 +21,11 @@ export const commands = async () => {
                 option.setName("amount")
                     .setDescription("The minimum amount to notify")
                     .setRequired(true)
+            )
+            .addBooleanOption(option =>
+                option.setName("mention")
+                    .setDescription("Should it mention @everyone")
+                    .setRequired(false)
             ),
         new SlashCommandBuilder()
             .setName("unwatch")
@@ -87,12 +92,13 @@ const handlers = {
     watch: async (interaction) => {
         const address = interaction.options.getString("address")
         const amount = interaction.options.getNumber("amount")
+        const mention = interaction.options.getBoolean("mention")
         await db.query(
-            `INSERT INTO watch (address, channel, amount)
-             VALUES ($1, $2, $3)
+            `INSERT INTO watch (address, channel, amount, mention)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (address, channel) DO
-             UPDATE SET amount = $3`,
-            [address, interaction.channelId, amount]
+             UPDATE SET amount = $3, mention = $4`,
+            [address, interaction.channelId, amount, mention]
         )
         await interaction.editReply(`ADDED ${getFinderLink(address, "address", address)} - ${format.amount(amount, 0)} UST`)
     },

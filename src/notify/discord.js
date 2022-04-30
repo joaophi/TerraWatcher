@@ -4,8 +4,9 @@ import format from "../shared/format.js"
 
 const formatCoin = ({ amount, denom, usd }) => `${amount} ${denom} - ${usd} USD`
 
-export const sendDiscordNotification = async (address, label, channelId, amountIn, amountOut, hash, timestamp, addresses) => {
+export const sendDiscordNotification = async (address, label, channelId, amountIn, amountOut, hash, timestamp, addresses, mention) => {
     try {
+        const content = mention ? "@everyone" : undefined
         const embeds = {
             fields: [
                 {
@@ -38,7 +39,7 @@ export const sendDiscordNotification = async (address, label, channelId, amountI
         }
 
         const channel = discord.channels.cache.get(channelId) ?? await discord.channels.fetch(channelId)
-        await channel.send({ embeds: [embeds] })
+        await channel.send({ content, embeds: [embeds] })
     } catch (error) {
         console.error("notifyTx error: %s", error.message)
     }

@@ -5,7 +5,7 @@
 -- Dumped from database version 14.2
 -- Dumped by pg_dump version 14.2
 
--- Started on 2022-04-30 18:21:46 UTC
+-- Started on 2022-04-30 19:29:41 UTC
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -121,14 +121,15 @@ ALTER TABLE public.tx ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
 CREATE TABLE public.watch (
     address character(44) NOT NULL,
     channel character(18) NOT NULL,
-    amount double precision NOT NULL
+    amount double precision NOT NULL,
+    mention boolean DEFAULT false NOT NULL
 );
 
 
 ALTER TABLE public.watch OWNER TO fcd;
 
 --
--- TOC entry 3200 (class 2606 OID 426808)
+-- TOC entry 3201 (class 2606 OID 426808)
 -- Name: address address_pkey; Type: CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -137,7 +138,7 @@ ALTER TABLE ONLY public.address
 
 
 --
--- TOC entry 3198 (class 2606 OID 213904)
+-- TOC entry 3199 (class 2606 OID 213904)
 -- Name: watch pk_watch; Type: CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -146,7 +147,7 @@ ALTER TABLE ONLY public.watch
 
 
 --
--- TOC entry 3191 (class 2606 OID 17563)
+-- TOC entry 3192 (class 2606 OID 17563)
 -- Name: tx_address tx_address_pkey; Type: CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -155,7 +156,7 @@ ALTER TABLE ONLY public.tx_address
 
 
 --
--- TOC entry 3196 (class 2606 OID 16417)
+-- TOC entry 3197 (class 2606 OID 16417)
 -- Name: tx_amount tx_amount_pkey; Type: CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -164,7 +165,7 @@ ALTER TABLE ONLY public.tx_amount
 
 
 --
--- TOC entry 3187 (class 2606 OID 16395)
+-- TOC entry 3188 (class 2606 OID 16395)
 -- Name: tx tx_pkey; Type: CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -173,7 +174,7 @@ ALTER TABLE ONLY public.tx
 
 
 --
--- TOC entry 3188 (class 1259 OID 427876)
+-- TOC entry 3189 (class 1259 OID 427876)
 -- Name: fki_fk_address_tx; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -181,7 +182,7 @@ CREATE INDEX fki_fk_address_tx ON public.tx_address USING btree (address);
 
 
 --
--- TOC entry 3192 (class 1259 OID 318364)
+-- TOC entry 3193 (class 1259 OID 318364)
 -- Name: fki_fk_amount_tx; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -189,7 +190,7 @@ CREATE INDEX fki_fk_amount_tx ON public.tx_amount USING btree (tx_id);
 
 
 --
--- TOC entry 3193 (class 1259 OID 258549)
+-- TOC entry 3194 (class 1259 OID 258549)
 -- Name: idx_amount; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -197,7 +198,7 @@ CREATE INDEX idx_amount ON public.tx_amount USING btree (tx_id, address);
 
 
 --
--- TOC entry 3184 (class 1259 OID 273979)
+-- TOC entry 3185 (class 1259 OID 273979)
 -- Name: idx_hash; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -205,7 +206,7 @@ CREATE UNIQUE INDEX idx_hash ON public.tx USING btree (hash);
 
 
 --
--- TOC entry 3194 (class 1259 OID 328534)
+-- TOC entry 3195 (class 1259 OID 328534)
 -- Name: idx_inout; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -213,7 +214,7 @@ CREATE INDEX idx_inout ON public.tx_amount USING btree (in_out);
 
 
 --
--- TOC entry 3201 (class 1259 OID 426896)
+-- TOC entry 3202 (class 1259 OID 426896)
 -- Name: idx_is_account; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -221,7 +222,7 @@ CREATE INDEX idx_is_account ON public.address USING btree (account);
 
 
 --
--- TOC entry 3189 (class 1259 OID 169506)
+-- TOC entry 3190 (class 1259 OID 169506)
 -- Name: idx_processed; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -229,7 +230,7 @@ CREATE INDEX idx_processed ON public.tx_address USING btree (processed);
 
 
 --
--- TOC entry 3185 (class 1259 OID 337939)
+-- TOC entry 3186 (class 1259 OID 337939)
 -- Name: idx_timestamp; Type: INDEX; Schema: public; Owner: fcd
 --
 
@@ -237,7 +238,7 @@ CREATE INDEX idx_timestamp ON public.tx USING btree ("timestamp");
 
 
 --
--- TOC entry 3203 (class 2606 OID 427871)
+-- TOC entry 3204 (class 2606 OID 427871)
 -- Name: tx_address fk_address_tx; Type: FK CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -246,7 +247,7 @@ ALTER TABLE ONLY public.tx_address
 
 
 --
--- TOC entry 3204 (class 2606 OID 17585)
+-- TOC entry 3205 (class 2606 OID 17585)
 -- Name: tx_amount fk_amount_address; Type: FK CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -255,7 +256,7 @@ ALTER TABLE ONLY public.tx_amount
 
 
 --
--- TOC entry 3205 (class 2606 OID 318359)
+-- TOC entry 3206 (class 2606 OID 318359)
 -- Name: tx_amount fk_amount_tx; Type: FK CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -264,7 +265,7 @@ ALTER TABLE ONLY public.tx_amount
 
 
 --
--- TOC entry 3202 (class 2606 OID 16407)
+-- TOC entry 3203 (class 2606 OID 16407)
 -- Name: tx_address fk_tx_address; Type: FK CONSTRAINT; Schema: public; Owner: fcd
 --
 
@@ -272,7 +273,7 @@ ALTER TABLE ONLY public.tx_address
     ADD CONSTRAINT fk_tx_address FOREIGN KEY (tx_id) REFERENCES public.tx(id);
 
 
--- Completed on 2022-04-30 18:21:49 UTC
+-- Completed on 2022-04-30 19:29:42 UTC
 
 --
 -- PostgreSQL database dump complete

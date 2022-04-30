@@ -1,5 +1,5 @@
 import getFinderLink from "../format/finderLink.js"
-import { contracts, whitelist } from "../shared/api.js"
+import { contracts, lcdClient, whitelist } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import format from "../shared/format.js"
 import { sleep } from "../shared/utils.js"
@@ -17,7 +17,7 @@ const notify = async () => {
                 `)
 
                 const res = await client.query(`
-                    SELECT W.address, AD.label, W.channel, W.amount, T.id, T.hash, T.timestamp
+                    SELECT W.address, AD.label, W.channel, W.amount, T.id, T.hash, T.timestamp, W.mention
                     FROM watch W
                         INNER JOIN tx_address A ON A.address = W.address
                         INNER JOIN tx T ON T.id = A.tx_id
@@ -38,18 +38,45 @@ const notify = async () => {
     }
 }
 
-const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp }) => {
+const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp, mention }) => {
     try {
-        const amounts = (await getAmount(id, address)).map(parseAmount)
+        const oAmounts = (await getAmount(id, address))
+        const amounts = oAmounts.map(parseAmount)
         const amountIn = amounts.filter(amount => amount.in_out == "I")
         const amountOut = amounts.filter(amount => amount.in_out == "O")
 
         const inUsd = amountIn.reduce((a, b) => a + b.usd, 0)
         const outUsd = amountOut.reduce((a, b) => a + b.usd, 0)
 
-        if (outUsd >= amount || inUsd >= amount) {
-            const addresses = await getAddressess(id)
-            sendDiscordNotification(address, label, channel, amountIn, amountOut, hash, timestamp, addresses.filter(it => it.address !== address))
+        const mTokenRegex = /m[A-Z]\w+/g
+        const hasMtoken = async () => {
+            for (const aIn of oAmounts.filter(amount => amount.in_out == "I")) {
+                if (isTerraAddress(aIn.denom)) {
+                    try {
+                        const { data } = await lcdClient.get(`/terra/wasm/v1beta1/contracts/${aIn.denom}`)
+                        if (mTokenRegex.test(data.contract_info.init_msg.symbol)) {
+                            mention = true
+                            return true
+                        }
+                    } catch (error) { }
+                }
+            }
+            return false
+        }
+
+        if ((address === "terra18w7z9prrjzncz3mkqh7e65q3mc6j386y0qyw9a" && await hasMtoken()) || outUsd >= amount || inUsd >= amount) {
+            const addresses = (await getAddressess(id)).filter(it => it.address !== address)
+            sendDiscordNotification(
+                address,
+                label,
+                channel,
+                amountIn,
+                amountOut,
+                hash,
+                timestamp,
+                addresses,
+                mention
+            )
             console.log("notifyTx %d sent", id)
         } else {
             console.log("notifyTx %d not needed", id)
