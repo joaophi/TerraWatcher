@@ -25,19 +25,6 @@ const rules = {
         {
             type: "from_contract",
             attributes: [
-                ["contract_address"],
-                ["action", "send"],
-                ["from"],
-                ["to", liquidationAddress],
-                ["amount"],
-                ["contract_address"],
-                ["action", "decrease_balance"],
-                ["holder_address"],
-                ["amount"],
-                ["contract_address"],
-                ["action", "increase_balance"],
-                ["holder_address", liquidationAddress],
-                ["amount"],
                 ["contract_address", liquidationAddress],
                 ["action", "execute_bid"],
                 ["stable_denom"],
@@ -49,12 +36,12 @@ const rules = {
             ],
         },
         (fragment, match) => ({
-            stable_denom: match[15].value,
-            repay_amount: match[16].value,
-            bid_fee: match[17].value,
-            liquidator_fe: match[18].value,
-            collateral_token: match[19].value,
-            collateral_amount: match[20].value,
+            stable_denom: match[2].value,
+            repay_amount: match[3].value,
+            bid_fee: match[4].value,
+            liquidator_fee: match[5].value,
+            collateral_token: match[6].value,
+            collateral_amount: match[7].value,
         })
     ),
     claimLiquidationRule: createReturningLogFinder(
@@ -76,8 +63,8 @@ const rules = {
 
 
 export const teste = () => {
-    
-    
+
+
     const result = tx.logs
         .map(log => log.events.map(event => Object.values(rules).map(rule => rule(event))))
         .flat(3)
