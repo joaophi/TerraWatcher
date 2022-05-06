@@ -31,3 +31,8 @@ axiosRetry(assetsClient, retryConfig)
 
 export const { data: { mainnet: whitelist } } = await assetsClient.get("cw20/tokens.json")
 export const { data: { mainnet: contracts } } = await assetsClient.get("cw20/contracts.json")
+
+export const queryContract = async (address, query_msg) => {
+    const base64 = Buffer.from(JSON.stringify(query_msg)).toString("base64")
+    return lcdClient.get(`https://lcd.terra.dev/terra/wasm/v1beta1/contracts/${address}/store?query_msg=${base64}`)
+}

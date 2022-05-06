@@ -1,9 +1,11 @@
 import { createReturningLogFinder } from "@terra-money/log-finder"
+import { queryContract } from "../shared/api.js"
 
-const liquidationAddress = "terra1e25zllgag7j9xsun3me4stnye2pcg66234je3u"
+export const overseerAddress = "terra1tmnqgvg567ypvsvk6rwsga3srp7e3lg6u0elp8"
+export const liquidationAddress = "terra1e25zllgag7j9xsun3me4stnye2pcg66234je3u"
 
 const rules = {
-    liquidateCollateralRule: createReturningLogFinder(
+    liquidateCollateral: createReturningLogFinder(
         {
             type: "from_contract",
             attributes: [
@@ -21,7 +23,7 @@ const rules = {
             amount: match[4].value,
         })
     ),
-    executeBidRule: createReturningLogFinder(
+    executeBid: createReturningLogFinder(
         {
             type: "from_contract",
             attributes: [
@@ -44,7 +46,7 @@ const rules = {
             collateral_amount: match[7].value,
         })
     ),
-    claimLiquidationRule: createReturningLogFinder(
+    claimLiquidation: createReturningLogFinder(
         {
             type: "from_contract",
             attributes: [
@@ -61,13 +63,29 @@ const rules = {
     ),
 }
 
+const { data: { query_result: { elems: collaterals } } } = await queryContract(overseerAddress, { whitelist: {} })
 
-export const teste = () => {
+export const getPools = async () => {
+    return (await Promise.all(
+        collaterals.map(async ({ collateral_token }) => {
+            const { data: { query_result: { bid_pools } } } = await queryContract(liquidationAddress, {
+                bid_pools_by_collateral: { collateral_token, limit: 31 }
+            })
+            return bid_pools.map(bid_pool => ({ ...bid_pool, collateral_token }))
+        })
+    )).flat()
+}
 
 
-    const result = tx.logs
-        .map(log => log.events.map(event => Object.values(rules).map(rule => rule(event))))
-        .flat(3)
-        .map(log => log.transformed)
-    console.log(result)
+export const getLiquidations = (tx) => {
+    const entries = Object.entries(rules)
+        .map(([name, rule]) => {
+            const finds = tx.logs.flatMap(log =>
+                log.events.flatMap(event =>
+                    rule(event).map(m => m.transformed)
+                )
+            )
+            return [name, finds]
+        })
+    return Object.fromEntries(entries)
 }
