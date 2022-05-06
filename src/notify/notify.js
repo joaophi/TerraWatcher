@@ -54,14 +54,14 @@ const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp, 
                     || aIn.denom.startsWith("[mMSFT]")
                     || aIn.denom.startsWith("[mGOOGL]")
                     || aIn.denom.startsWith("[mCOIN]")) {
-                    mention = true
+                    // mention = true
                     return true
                 }
             }
             return false
         }
 
-        if ((address === "terra18w7z9prrjzncz3mkqh7e65q3mc6j386y0qyw9a" && hasMtoken()) || outUsd >= amount || inUsd >= amount) {
+        if ((address === "terra18w7z9prrjzncz3mkqh7e65q3mc6j386y0qyw9a" && channel == "968602995002589204" && hasMtoken()) || outUsd >= amount || inUsd >= amount) {
             const addresses = (await getAddressess(id)).filter(it => it.address !== address)
             sendDiscordNotification(
                 address,

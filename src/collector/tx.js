@@ -4,31 +4,28 @@ import { lcdClient } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import { getAddresses } from "./address.js"
 import { getAmounts } from "./amount.js"
+import { getLiquidations } from "./liquidation.js"
 import { getUsdPrice } from "./price.js"
 
 export const processTx = async (tx) => {
-    const addresses = getAddresses(tx)
-        .map(address => {
-            return {
-                address,
-                ...getAmounts(tx, address)
-            }
-        })
+    // AMOUNT
+    const addresses = getAddresses(tx).map(address => ({ address, ...getAmounts(tx, address) }))
 
-    for (const address of addresses) {
-        for (const amount of address.amountIn) {
-            amount.usd = amount.amount * (await getUsdPrice(amount.denom))
-        }
-        for (const amount of address.amountOut) {
-            amount.usd = amount.amount * (await getUsdPrice(amount.denom))
-        }
+    for (const amount of addresses.flatMap(a => [...a.amountIn, ...a.amountOut])) {
+        amount.usd = amount.amount * (await getUsdPrice(amount.denom))
     }
+
+    // LIQUIDATION
+
+    // const liquidations = getLiquidations(tx)
+    // console.log(liquidations)
 
     return {
         hash: tx.txhash,
         addresses,
         timestamp: tx.timestamp,
-        json: JSON.stringify(tx)
+        json: JSON.stringify(tx)//,
+        // liquidations
     }
 }
 
