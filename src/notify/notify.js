@@ -49,14 +49,15 @@ const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp, 
 
         const hasMtoken = () => {
             for (const aIn of amountIn) {
-                if (aIn.denom.startsWith("[mNFLX]")
-                    || aIn.denom.startsWith("[mAAPL]")
-                    || aIn.denom.startsWith("[mMSFT]")
-                    || aIn.denom.startsWith("[mGOOGL]")
-                    || aIn.denom.startsWith("[mCOIN]")) {
-                    // mention = true
+                // if (aIn.denom.startsWith("[mNFLX]")
+                    // || aIn.denom.startsWith("[mAAPL]")
+                    // || aIn.denom.startsWith("[mMSFT]")
+                    // || aIn.denom.startsWith("[mGOOGL]")
+                    // || aIn.denom.startsWith("[mCOIN]")
+                    // || aIn.denom.startsWith("[mUSO]")) {
+                    mention = true
                     return true
-                }
+                // }
             }
             return false
         }

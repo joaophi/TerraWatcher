@@ -4,28 +4,26 @@ import { lcdClient } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import { getAddresses } from "./address.js"
 import { getAmounts } from "./amount.js"
-import { getLiquidations } from "./liquidation.js"
+import { getLiquidations, liquidationAddress } from "./liquidation.js"
 import { getUsdPrice } from "./price.js"
 
 export const processTx = async (tx) => {
     // AMOUNT
     const addresses = getAddresses(tx).map(address => ({ address, ...getAmounts(tx, address) }))
-
     for (const amount of addresses.flatMap(a => [...a.amountIn, ...a.amountOut])) {
         amount.usd = amount.amount * (await getUsdPrice(amount.denom))
     }
 
     // LIQUIDATION
-
-    // const liquidations = getLiquidations(tx)
-    // console.log(liquidations)
+    const liquidations = getLiquidations(tx)
 
     return {
         hash: tx.txhash,
+        memo: tx.value.memo,
         addresses,
         timestamp: tx.timestamp,
-        json: JSON.stringify(tx)//,
-        // liquidations
+        json: JSON.stringify(tx),
+        liquidations
     }
 }
 
@@ -114,20 +112,24 @@ export const collectTx = async (hash) => {
     }
 }
 
-const saveTx = async ({ hash, addresses, timestamp, json }) => {
+const saveTx = async ({ hash, memo, addresses, timestamp, json, liquidations }) => {
     const client = await db.connect()
     try {
         await client.query("BEGIN")
 
         const result = await client.query(`
-            INSERT INTO tx(hash, "timestamp", json)
-            VALUES ($1, $2, $3)
+            INSERT INTO tx(hash, "timestamp", json, memo)
+            VALUES ($1, $2, $3, $4)
             RETURNING id
-        `, [hash, timestamp, json])
+        `, [hash, timestamp, json, memo])
         const id = result.rows[0].id
 
         for (const address of addresses) {
             await saveAddress(address.address, client)
+
+            if (address == liquidationAddress) {
+                updatePoolInfo()
+            }
 
             await client.query(`
                 INSERT INTO tx_address(tx_id, address, processed)
@@ -147,6 +149,28 @@ const saveTx = async ({ hash, addresses, timestamp, json }) => {
                     VALUES ($1, $2, $3, $4, $5, $6);
                 `, [id, address.address, amount.denom, amount.amount, amount.usd, "O"])
             }
+        }
+
+        for (const claim of liquidations.claimLiquidation) {
+            await client.query(`
+                INSERT INTO tx_claim(tx_id, collateral_token, collateral_amount)
+                VALUES ($1, $2, $3)
+            `, [id, claim.collateral_token, claim.collateral_amount])
+        }
+
+        for (const liquidateCollateral of liquidations.liquidateCollateral) {
+            await client.query(`
+                INSERT INTO tx_liquidation(tx_id, custody, liquidator, borrower)
+                VALUES ($1, $2, $3, $4);
+            `, [id, liquidateCollateral.custody, liquidateCollateral.liquidator, liquidateCollateral.borrower])
+        }
+
+        for (const executeBid of liquidations.executeBid) {
+            await client.query(`
+                INSERT INTO tx_execute_bid(tx_id, stable_denom, repay_amount, bid_fee, liquidator_fee, collateral_token, collateral_amount)
+                VALUES ($1, $2, $3, $4, $5, $6, $7);
+            `, [id, executeBid.stable_denom, executeBid.repay_amount, executeBid.bid_fee,
+                executeBid.liquidator_fee, executeBid.collateral_token, executeBid.collateral_amount])
         }
 
         await client.query("COMMIT")
