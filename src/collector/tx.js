@@ -19,7 +19,7 @@ export const processTx = async (tx) => {
 
     return {
         hash: tx.txhash,
-        memo: tx.value.memo,
+        memo: tx.tx.value.memo,
         addresses,
         timestamp: tx.timestamp,
         json: JSON.stringify(tx),
