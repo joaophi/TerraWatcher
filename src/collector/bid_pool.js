@@ -40,3 +40,5 @@ export const updatePoolInfo = async () => {
         isRunning = false
     }
 }
+
+updatePoolInfo()
