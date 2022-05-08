@@ -1,5 +1,5 @@
 import getFinderLink from "../format/finderLink.js"
-import { contracts, lcdClient, whitelist } from "../shared/api.js"
+import { contracts, whitelist } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import format from "../shared/format.js"
 import { sleep } from "../shared/utils.js"
@@ -37,7 +37,7 @@ const notify = async () => {
         client.release()
     }
 }
-
+let w9a = true
 const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp, mention }) => {
     try {
         const amounts = (await getAmount(id, address)).map(parseAmount)
@@ -50,13 +50,16 @@ const notifyTx = async ({ address, label, channel, amount, id, hash, timestamp, 
         const hasMtoken = () => {
             for (const aIn of amountIn) {
                 // if (aIn.denom.startsWith("[mNFLX]")
-                    // || aIn.denom.startsWith("[mAAPL]")
-                    // || aIn.denom.startsWith("[mMSFT]")
-                    // || aIn.denom.startsWith("[mGOOGL]")
-                    // || aIn.denom.startsWith("[mCOIN]")
-                    // || aIn.denom.startsWith("[mUSO]")) {
+                // || aIn.denom.startsWith("[mAAPL]")
+                // || aIn.denom.startsWith("[mMSFT]")
+                // || aIn.denom.startsWith("[mGOOGL]")
+                // || aIn.denom.startsWith("[mCOIN]")
+                // || aIn.denom.startsWith("[mUSO]")) {
+                if (w9a) {
                     mention = true
-                    return true
+                    w9a = false
+                }
+                return true
                 // }
             }
             return false
