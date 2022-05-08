@@ -128,7 +128,7 @@ const saveTx = async ({ hash, memo, addresses, timestamp, json, liquidations }) 
         for (const address of addresses) {
             await saveAddress(address.address, client)
 
-            if (address == liquidationAddress) {
+            if (address.address === liquidationAddress) {
                 updatePoolInfo()
             }
 
