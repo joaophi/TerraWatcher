@@ -34,6 +34,7 @@ export const updatePoolInfo = async () => {
     try {
         const promises = (await getPools()).map(savePool)
         await Promise.all(promises)
+        console.log("bid pool updated")
     } catch (error) {
         console.error("update pool error: %s", error.message)
     } finally {
