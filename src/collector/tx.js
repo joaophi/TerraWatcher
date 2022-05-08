@@ -4,6 +4,7 @@ import { lcdClient } from "../shared/api.js"
 import { db } from "../shared/db.js"
 import { getAddresses } from "./address.js"
 import { getAmounts } from "./amount.js"
+import { updatePoolInfo } from "./bid_pool.js"
 import { getLiquidations, liquidationAddress } from "./liquidation.js"
 import { getUsdPrice } from "./price.js"
 
